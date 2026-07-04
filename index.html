@@ -255,13 +255,11 @@
         const query = searchInput.value.trim();
         if (!query) return;
 
-        // Reset de UI
         loader.style.display = 'block';
         errorBox.style.display = 'none';
         resultCard.style.display = 'none';
 
         try {
-            // 1. OBTENER TEXTO DESDE WIKIPEDIA (API Abierta sin necesidad de Llaves/Keys)
             const wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(query)}&origin=*`;
             const wikiResp = await fetch(wikiUrl);
             const wikiData = await wikiResp.json();
@@ -270,39 +268,41 @@
             const pageId = Object.keys(pages)[0];
             
             if (pageId === "-1") {
-                throw new Error("No encontramos un artículo botánico específico para ese nombre. Probá con un término más directo (ej: 'Cultivo de tomate', 'Manzano', 'Limonero').");
+                throw new Error("No encontramos un artículo específico. Probá escribiendo el nombre directo (ej: 'Tomate', 'Palta', 'Girasol').");
             }
 
             const textoCompleto = pages[pageId].extract;
             document.getElementById('res-nombre').innerText = pages[pageId].title;
 
-            // Procesamiento básico del texto de Wikipedia para segmentarlo en los bloques de la UI
             document.getElementById('res-descripcion').innerText = cortarTexto(textoCompleto, 0, 500);
-            document.getElementById('res-cultivo').innerText = encontrarSeccionOClonar(textoCompleto, ["cultivo", "siembra", "propagación", "desarrollo"], textoCompleto.slice(300, 900));
-            document.getElementById('res-suelo').innerText = encontrarSeccionOClonar(textoCompleto, ["suelo", "clima", "variedad", "enfermedades"], textoCompleto.slice(600, 1200));
+            document.getElementById('res-cultivo').innerText = encontrarSeccionOClonar(textoCompleto, ["cultivo", "siembra", "propagación", "desarrollo"], textoCompleto.slice(300, 800));
+            document.getElementById('res-suelo').innerText = encontrarSeccionOClonar(textoCompleto, ["suelo", "clima", "variedad", "tierra"], textoCompleto.slice(500, 1000));
 
-            // 2. OBTENER IMÁGENES AUTOMÁTICAS (Usando la API Source de Unsplash pública orientada al término de búsqueda)
-            // Agregamos keywords en inglés por detrás para asegurar consistencia robusta de imágenes botánicas de alta calidad
-            const queryEng = query.toLowerCase();
-            document.getElementById('img-semilla').src = `https://images.unsplash.com/photo-1600180758890-6b94e61025a5?w=500&q=80`; // Fallback semilla base estética si falla la keyword
-            document.getElementById('img-semilla').src = `https://source.unsplash.com/featured/500x500?${queryEng},seeds`;
-            document.getElementById('img-planta').src = `https://source.unsplash.com/featured/500x500?${queryEng},plant`;
-            document.getElementById('img-fruto').src = `https://source.unsplash.com/featured/500x500?${queryEng},fruit`;
-            document.getElementById('img-flor').src = `https://source.unsplash.com/featured/500x500?${queryEng},flower`;
+            const queryClean = encodeURIComponent(query.toLowerCase());
+            
+            // URLs de Unsplash estables que no rompen el pipeline de GitHub
+            document.getElementById('img-semilla').src = `https://images.unsplash.com/photo-1600180758890-6b94e61025a5?w=500&q=80`; 
+            document.getElementById('img-planta').src = `https://images.unsplash.com/photo-1592417817098-8f3d6eb18865?w=500&q=80`;
+            document.getElementById('img-fruto').src = `https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80`;
+            document.getElementById('img-flor').src = `https://images.unsplash.com/photo-1625244724107-a73977fc6036?w=500&q=80`;
 
-            // Mostrar el layout final
+            // Intento de mutación de imágenes asíncronas dinámicas sin usar endpoints bloqueados
+            document.getElementById('img-semilla').src = `https://images.unsplash.com/featured/?${queryClean},seed`;
+            document.getElementById('img-planta').src = `https://images.unsplash.com/featured/?${queryClean},plant`;
+            document.getElementById('img-fruto').src = `https://images.unsplash.com/featured/?${queryClean},fruit`;
+            document.getElementById('img-flor').src = `https://images.unsplash.com/featured/?${queryClean},flower`;
+
             loader.style.display = 'none';
             resultCard.style.display = 'block';
             resultCard.scrollIntoView({ behavior: 'smooth' });
 
         } catch (err) {
             loader.style.display = 'none';
-            errorBox.innerText = err.message || "Error de conexión al buscar en internet.";
+            errorBox.innerText = err.message || "Error al conectar con los servicios botánicos.";
             errorBox.style.display = 'block';
         }
     }
 
-    // Funciones auxiliares defensivas para procesar textos dinámicos gigantescos de Wikipedia
     function cortarTexto(texto, inicio, fin) {
         if (!texto) return "Dato no disponible temporalmente.";
         return texto.length > fin ? texto.substring(inicio, fin) + "..." : texto;
@@ -311,17 +311,15 @@
     function encontrarSeccionOClonar(texto, palabrasClave, fragmentoFallback) {
         const lineas = texto.split('.');
         let parrafoFiltrado = "";
-        
-        // Algoritmo de extracción por concordancia de contexto botánico
         for (let linea of lineas) {
             for (let palabra of palabrasClave) {
                 if (linea.toLowerCase().includes(palabra) && linea.length > 20) {
                     parrafoFiltrado += linea + ". ";
-                    if (parrafoFiltrado.length > 350) break;
+                    if (parrafoFiltrado.length > 300) break;
                 }
             }
         }
-        return parrafoFiltrado.length > 30 ? parrafoFiltrado : (fragmentoFallback || "Para esta planta, se recomienda sembrar en suelos sueltos, manteniendo riego moderado sin encharcar y asegurando de 4 a 6 horas de luz diarias.");
+        return parrafoFiltrado.length > 30 ? parrafoFiltrado : (fragmentoFallback || "Asegurar un sustrato fértil con buen drenaje, riegos controlados sin encharcar y exposición solar adecuada.");
     }
 
     searchBtn.addEventListener('click', buscarEnInternet);
