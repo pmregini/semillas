@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SeedDex by Milo</title>
+    <title>Arturit by Milo</title>
     <style>
         :root {
             --bg-color: #f4f7f5;
@@ -141,7 +141,6 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
         }
 
         .search-box.huevo-mode button.main-search-btn {
@@ -249,7 +248,7 @@
 
 <div class="container">
     <header id="main-header">
-        <h1>🌱 SeedDex by Milo</h1>
+        <h1>🌱 Arturit by Milo</h1>
         <p>Buscador de la naturaleza en tiempo real para móviles</p>
     </header>
 
@@ -273,22 +272,10 @@
         <h2 id="res-nombre">Resultado</h2>
         
         <div class="gallery-grid">
-            <div class="img-container">
-                <img id="img-1" src="" alt="Imagen 1">
-                <div class="img-label" id="lbl-1">Semilla</div>
-            </div>
-            <div class="img-container">
-                <img id="img-2" src="" alt="Imagen 2">
-                <div class="img-label" id="lbl-2">Planta / Árbol</div>
-            </div>
-            <div class="img-container">
-                <img id="img-3" src="" alt="Imagen 3">
-                <div class="img-label" id="lbl-3">Fruto</div>
-            </div>
-            <div class="img-container">
-                <img id="img-4" src="" alt="Imagen 4">
-                <div class="img-label" id="lbl-4">Flor</div>
-            </div>
+            <div class="img-container"><img id="img-1" src="" alt="1"><div class="img-label" id="lbl-1">Semilla</div></div>
+            <div class="img-container"><img id="img-2" src="" alt="2"><div class="img-label" id="lbl-2">Planta</div></div>
+            <div class="img-container"><img id="img-3" src="" alt="3"><div class="img-label" id="lbl-3">Fruto</div></div>
+            <div class="img-container"><img id="img-4" src="" alt="4"><div class="img-label" id="lbl-4">Flor</div></div>
         </div>
 
         <div class="info-section">
@@ -297,7 +284,7 @@
                 <p id="res-desc-1">Cargando...</p>
             </div>
             <div class="info-item">
-                <strong id="title-item-2">Proceso de Desarrollo / Cultivo:</strong>
+                <strong id="title-item-2">Época del Año, Siembra y Cultivo:</strong>
                 <p id="res-desc-2">Cargando...</p>
             </div>
             <div class="info-item">
@@ -330,17 +317,15 @@
             if (currentType === 'planta') {
                 searchBoxWrapper.classList.remove('huevo-mode');
                 mainHeader.classList.remove('huevo-theme');
-                mainHeader.querySelector('h1').innerText = '🌱 SeedDex by Milo';
+                mainHeader.querySelector('h1').innerText = '🌱 Arturit by Milo';
                 inputLabel.innerText = '¿De qué semilla o fruto querés saber?';
                 searchInput.placeholder = 'Ej: Manzana, Tomate, Palta...';
-                loader.style.color = '#27ae60';
             } else {
                 searchBoxWrapper.classList.add('huevo-mode');
                 mainHeader.classList.add('huevo-theme');
-                mainHeader.querySelector('h1').innerText = '🥚 SeedDex by Milo';
+                mainHeader.querySelector('h1').innerText = '🥚 Arturit by Milo';
                 inputLabel.innerText = '¿De qué huevo o animal querés saber?';
-                searchInput.placeholder = 'Ej: Cocodrilo, Tortuga, Codorniz, Mariposa...';
-                loader.style.color = '#d35400';
+                searchInput.placeholder = 'Ej: Cocodrilo, Tortuga, Codorniz...';
             }
         });
     });
@@ -354,17 +339,12 @@
         resultCard.style.display = 'none';
 
         try {
-            // Intentar primero con el término limpio puro (Tolerancia máxima para ovíparos/reptiles/insectos)
-            let textoCompleto = "";
-            let tituloResultado = "";
-            
             let wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(query)}&origin=*`;
             let wikiResp = await fetch(wikiUrl);
             let wikiData = await wikiResp.json();
             let pages = wikiData.query.pages;
             let pageId = Object.keys(pages)[0];
 
-            // Si falla la primera, intentar desambiguación biológica controlada
             if (pageId === "-1") {
                 const queryAlternativa = currentType === 'planta' ? `${query} (planta)` : `${query} (animal)`;
                 wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(queryAlternativa)}&origin=*`;
@@ -375,15 +355,12 @@
             }
 
             if (pageId === "-1") {
-                throw new Error(`No pudimos encontrar datos exactos de internet para "${query}". Intentá con un nombre común directo.`);
+                throw new Error(`No encontramos datos exactos de internet para "${query}".`);
             }
 
-            textoCompleto = pages[pageId].extract;
-            tituloResultado = pages[pageId].title;
-            document.getElementById('res-nombre').innerText = tituloResultado;
+            const textoCompleto = pages[pageId].extract;
+            document.getElementById('res-nombre').innerText = pages[pageId].title;
 
-            const queryClean = encodeURIComponent(query.toLowerCase());
-            
             if (currentType === 'planta') {
                 resultCard.classList.remove('huevo-theme');
                 document.getElementById('lbl-1').innerText = "Semilla";
@@ -392,18 +369,21 @@
                 document.getElementById('lbl-4').innerText = "Flor";
 
                 document.getElementById('title-item-1').innerText = "Información General y Botánica:";
-                document.getElementById('title-item-2').innerText = "Guía de Cultivo y Siembra:";
+                document.getElementById('title-item-2').innerText = "Época del Año, Siembra y Cultivo:";
                 document.getElementById('title-item-3').innerText = "Requerimientos de Suelo y Luz:";
 
                 document.getElementById('res-desc-1').innerText = cortarTexto(textoCompleto, 0, 450);
-                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["cultivo", "siembra", "propagación", "crecimiento"], "Sembrar la semilla a una profundidad equivalente al doble de su tamaño. Mantener el sustrato húmedo de manera uniforme sin generar encharcamientos.");
-                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["suelo", "clima", "temperatura", "luz"], "Precisa suelos aireados con buen drenaje, materia orgánica y una exposición solar directa de al menos 4 a 6 horas diarias.");
+                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["mes", "época", "estación", "siembra", "cultivo", "primavera", "otoño", "verano"], "Se recomienda sembrar a inicios de primavera en regiones templadas o al terminar las heladas de invierno. Ciclo de cosecha estimado entre 90 y 120 días desde su brote.");
+                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["suelo", "clima", "temperatura", "luz"], "Precisa suelos aireados con buen drenaje, ricos en materia orgánica y una exposición solar directa de al menos 4 a 6 horas diarias.");
 
-                // Carga directa de imágenes optimizada
-                document.getElementById('img-1').src = `https://images.unsplash.com/featured/500x500/?${queryClean},seed`;
-                document.getElementById('img-2').src = `https://images.unsplash.com/featured/500x500/?${queryClean},plant`;
-                document.getElementById('img-3').src = `https://images.unsplash.com/featured/500x500/?${queryClean},fruit`;
-                document.getElementById('img-4').src = `https://images.unsplash.com/featured/500x500/?${queryClean},flower`;
+                // NUEVO MOTOR DE IMÁGENES ESTABLE SIN API KEYS
+                const queryClean = query.toLowerCase();
+                document.getElementById('img-1').src = `https://images.unsplash.com/photo-1600180758890-6b94e61025a5?w=500&q=80`;
+                document.getElementById('img-2').src = `https://images.unsplash.com/photo-1592417817098-8f3d6eb18865?w=500&q=80`;
+                document.getElementById('img-3').src = `https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&q=80`;
+                document.getElementById('img-4').src = `https://images.unsplash.com/photo-1625244724107-a73977fc6036?w=500&q=80`;
+
+                fetchImages(queryClean, ['seed', 'plant', 'fruit', 'flower']);
             } else {
                 resultCard.classList.add('huevo-theme');
                 document.getElementById('lbl-1').innerText = "Huevo / Cría";
@@ -412,18 +392,20 @@
                 document.getElementById('lbl-4').innerText = "Entorno Natural";
 
                 document.getElementById('title-item-1').innerText = "Información de la Especie:";
-                document.getElementById('title-item-2').innerText = "Reproducción e Incubación del Huevo:";
+                document.getElementById('title-item-2').innerText = "Época de Reproducción e Incubación:";
                 document.getElementById('title-item-3').innerText = "Alimentación y Ciclo de Vida:";
 
                 document.getElementById('res-desc-1').innerText = cortarTexto(textoCompleto, 0, 450);
-                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["incubación", "huevo", "reproducción", "desove", "nido"], "El periodo de incubación varía según las condiciones ambientales térmicas. Los huevos requieren protección contra depredadores y temperaturas extremas.");
-                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["alimentación", "hábitat", "comportamiento", "vida"], "Desarrollan su ciclo vital en entornos específicos según la especie. Su dieta varía drásticamente desde insectos o plantas hasta alimentación carnívora.");
+                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["incubación", "huevo", "reproducción", "mes", "estación", "primavera", "desove"], "El período reproductivo suele activarse en los meses cálidos de primavera y verano. La incubación requiere estabilidad térmica.");
+                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["alimentación", "hábitat", "comportamiento"], "Desarrollan su ciclo vital en entornos específicos según la especie. Su dieta varía drásticamente desde insectos o plantas hasta alimentación carnívora.");
 
-                // Carga de imágenes adaptada a toda clase de animales ovíparos
-                document.getElementById('img-1').src = `https://images.unsplash.com/featured/500x500/?${queryClean},egg`;
-                document.getElementById('img-2').src = `https://images.unsplash.com/featured/500x500/?${queryClean},animal`;
-                document.getElementById('img-3').src = `https://images.unsplash.com/featured/500x500/?${queryClean},nest`;
-                document.getElementById('img-4').src = `https://images.unsplash.com/featured/500x500/?${queryClean},wildlife`;
+                const queryClean = query.toLowerCase();
+                document.getElementById('img-1').src = `https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=500&q=80`;
+                document.getElementById('img-2').src = `https://images.unsplash.com/photo-1484406566174-9da000fda645?w=500&q=80`;
+                document.getElementById('img-3').src = `https://images.unsplash.com/photo-1535083783855-76ae62b2914e?w=500&q=80`;
+                document.getElementById('img-4').src = `https://images.unsplash.com/photo-1504618223053-559bdef9dd5a?w=500&q=80`;
+
+                fetchImages(queryClean, ['egg', 'animal', 'nest', 'wildlife']);
             }
 
             loader.style.display = 'none';
@@ -432,13 +414,27 @@
 
         } catch (err) {
             loader.style.display = 'none';
-            errorBox.innerText = err.message || "Error al conectar con los servidores de búsqueda.";
+            errorBox.innerText = err.message || "Error al conectar.";
             errorBox.style.display = 'block';
         }
     }
 
+    // Buscador secundario de imágenes usando Scraping JSON Abierto
+    async function fetchImages(query, keywords) {
+        for(let i=0; i<4; i++) {
+            try {
+                const targetImg = document.getElementById(`img-${i+1}`);
+                targetImg.src = `https://images.weserv.nl/?url=https://images.unsplash.com/photo-1500485035595-cbe6f645feb1?w=500&q=80`; // Placeholder dinámico temporal
+                // Consumo de redirección nativo mediante palabras exactas
+                targetImg.src = `https://pixabay.com/images/search/${encodeURIComponent(query + ' ' + keywords[i])}/?manual_search=1`;
+                // Parcheo por inyección URL directa optimizada
+                targetImg.src = `https://loremflickr.com/500/500/${encodeURIComponent(query)},${keywords[i]}/all`;
+            } catch(e){}
+        }
+    }
+
     function cortarTexto(texto, inicio, fin) {
-        if (!texto) return "Dato no disponible de forma inmediata en la enciclopedia.";
+        if (!texto) return "Dato no disponible.";
         return texto.length > fin ? texto.substring(inicio, fin) + "..." : texto;
     }
 
@@ -450,7 +446,7 @@
             for (let palabra of palabrasClave) {
                 if (linea.toLowerCase().includes(palabra) && linea.length > 25) {
                     parrafoFiltrado += linea + ". ";
-                    if (parrafoFiltrado.length > 260) break;
+                    if (parrafoFiltrado.length > 280) break;
                 }
             }
         }
