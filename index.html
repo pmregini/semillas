@@ -318,7 +318,6 @@
 
     let currentType = 'planta';
 
-    // Diccionario taxonómico estricto para evitar osos, estatuas, comida o ciudades
     const DIC_BOTANICO = {
         'gallina': 'chicken bird',
         'pollo': 'chicken bird',
@@ -477,24 +476,21 @@
         }
     }
 
-    // Sistema de inyección blindado con traducción obligatoria y bypass de caché
     function inyectarFotosInteligentes(query, tipo) {
         let qLimpia = query.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         let terminoIngles = DIC_BOTANICO[qLimpia] || qLimpia;
-
-        // Marcador único de milisegundos para romper el congelamiento de caché en celulares
         const cacheBuster = new Date().getTime(); 
 
         if (tipo === 'planta') {
-            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' seeds dry')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' sprout growth botany')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' fresh farm fruit harvest')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' blossom petal flower')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' seeds dry')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' sprout growth botany')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' fresh farm fruit harvest')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' blossom petal flower')}&timestamp=${cacheBuster}`;
         } else {
-            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' unhatched raw egg nest')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' adult animal zoology')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' bird nest egg habitat')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' wildlife nature wilderness')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' unhatched raw egg nest')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' adult animal zoology')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' bird nest egg habitat')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' wildlife nature wilderness')}&timestamp=${cacheBuster}`;
         }
     }
 
