@@ -275,17 +275,17 @@
         </div>
     </div>
 
-    <div class="loader" id="loader">🔍 Buscando y procesando información científica exacta...</div>
+    <div class="loader" id="loader">🔍 Conectando con bases científicas globales...</div>
     <div class="error-message" id="error-box"></div>
 
     <div class="result-card" id="result-card">
         <h2 id="res-nombre">Resultado</h2>
         
         <div class="gallery-grid">
-            <div class="img-container"><img id="img-1" src="" alt="1" onerror="this.src='https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=400'"><div class="img-label" id="lbl-1">Semilla</div></div>
-            <div class="img-container"><img id="img-2" src="" alt="2" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400'"><div class="img-label" id="lbl-2">Planta</div></div>
-            <div class="img-container"><img id="img-3" src="" alt="3" onerror="this.src='https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400'"><div class="img-label" id="lbl-3">Fruto</div></div>
-            <div class="img-container"><img id="img-4" src="" alt="4" onerror="this.src='https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=400'"><div class="img-label" id="lbl-4">Flor</div></div>
+            <div class="img-container"><img id="img-1" src="" alt="Cargando foto 1..."><div class="img-label" id="lbl-1">Semilla</div></div>
+            <div class="img-container"><img id="img-2" src="" alt="Cargando foto 2..."><div class="img-label" id="lbl-2">Planta</div></div>
+            <div class="img-container"><img id="img-3" src="" alt="Cargando foto 3..."><div class="img-label" id="lbl-3">Fruto</div></div>
+            <div class="img-container"><img id="img-4" src="" alt="Cargando foto 4..."><div class="img-label" id="lbl-4">Flor</div></div>
         </div>
 
         <div class="info-section">
@@ -318,6 +318,27 @@
 
     let currentType = 'planta';
 
+    // Diccionario taxonómico estricto para evitar osos, estatuas, comida o ciudades
+    const DIC_BOTANICO = {
+        'gallina': 'chicken bird',
+        'pollo': 'chicken bird',
+        'codorniz': 'quail bird',
+        'pato': 'duck bird',
+        'ganso': 'goose bird',
+        'tortuga': 'turtle reptile',
+        'cocodrilo': 'crocodile reptile',
+        'menta': 'mint herb plant',
+        'limon': 'lemon fruit tree',
+        'limón': 'lemon fruit tree',
+        'manzana': 'apple fruit botanic',
+        'tomate': 'tomato plant ripe',
+        'girasol': 'sunflower bloom',
+        'palta': 'avocado tree plant',
+        'aguacate': 'avocado tree plant',
+        'frutilla': 'strawberry plant fruit',
+        'fresa': 'strawberry plant fruit'
+    };
+
     typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             typeButtons.forEach(b => b.classList.remove('active'));
@@ -341,7 +362,6 @@
     });
 
     async function resolverWikipediaCascada(query, tipo) {
-        // Limpieza estricta inicial para evitar errores de compilación y caracteres rotos en deploy
         let terminoLimpio = query.replace(/[×*()]/g, "").trim();
         let variantes = [];
         
@@ -349,7 +369,6 @@
             variantes = [
                 terminoLimpio,
                 `${terminoLimpio} (planta)`,
-                `Mentha`, // Término comodín botánico directo para mentas
                 `Cultivo de ${terminoLimpio}`
             ];
         } else {
@@ -360,14 +379,12 @@
             ];
         }
 
-        // Ejecución aislada por bloque para evitar desplome del hilo principal de red
         for (let v of variantes) {
             try {
                 const url = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(v)}&origin=*`;
                 const res = await fetch(url);
                 if (!res.ok) continue;
                 const data = await res.json();
-                if(!data.query || !data.query.pages) continue;
                 const pages = data.query.pages;
                 const pageId = Object.keys(pages)[0];
                 
@@ -377,14 +394,11 @@
                     !pages[pageId].extract.includes("localidad")) {
                     return pages[pageId];
                 }
-            } catch (e) {
-                console.log("Variante omitida de forma segura.");
-            }
+            } catch (e) {}
         }
 
-        // OpenSearch inteligente de contingencia absoluta
         try {
-            const contextoBusqueda = tipo === 'planta' ? `${terminoLimpio} botánica` : `${terminoLimpio} especie animal`;
+            const contextoBusqueda = tipo === 'planta' ? `${terminoLimpio} botánica` : `${terminoLimpio} animal`;
             const searchUrl = `https://es.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(contextoBusqueda)}&limit=2&namespace=0&format=json&origin=*`;
             const sRes = await fetch(searchUrl);
             const sData = await sRes.json();
@@ -415,8 +429,6 @@
 
         try {
             const paginaValida = await resolverWikipediaCascada(query, currentType);
-
-            // Generación de textos robustos estructurados si Wikipedia falla de forma persistente
             let textoCompleto = paginaValida ? paginaValida.extract : "";
             document.getElementById('res-nombre').innerText = paginaValida ? paginaValida.title : query;
 
@@ -431,15 +443,14 @@
                 document.getElementById('title-item-2').innerText = "Manual Avanzado de Siembra y Épocas:";
                 document.getElementById('title-item-3').innerText = "Requerimientos de Sustrato, Maceta y Luz:";
 
-                document.getElementById('res-desc-1').innerText = textoCompleto ? cortarTexto(textoCompleto, 0, 650) : `La especie conocida comercialmente como ${query} corresponde a un espécimen vegetal de alto interés de cultivo doméstico, medicinal o alimentario.`;
-                document.getElementById('res-desc-2').innerText = `• ÉPOCA IDEAL: Inicios de primavera o finales de invierno en semilleros protegidos (evitando heladas por completo).\n\n• PROCESO DE GERMINACIÓN: Disponer las semillas sobre sustrato húmedo a una profundidad equivalente al doble de su tamaño. Mantener cubierto o pulverizado de forma constante a una temperatura templada (18°C - 22°C) hasta ver los primeros brotes verdaderos (7 a 14 días).\n\n• TRASPLANTE: Mudar a su maceta o suelo definitivo cuando el tallo principal posea al menos de 4 a 6 hojas desarrolladas de manera firme.`;
-                document.getElementById('res-desc-3').innerText = `• SUELO / SUSTRATO: Requiere suelos ligeros, sueltos y con excelente drenaje (mezcla recomendada de 40% turba, 30% humus de lombriz y 30% perlita).\n\n• MACETA Y BALCÓN: Se adapta perfectamente al cultivo en macetas de profundidad mediana (mínimo 20-30 cm) y balcones urbanos, requiriendo protección de corrientes heladas o ráfagas secas directas.\n\n• LUZ: Exposición lumínica alta a moderada (mínimo de 4 a 6 horas de sol matutino directo o semisombra luminosa).`;
+                document.getElementById('res-desc-1').innerText = textoCompleto ? cortarTexto(textoCompleto, 0, 650) : `La especie vegetal "${query}" es de alto interés agrícola y de cultivo autónomo doméstico.`;
+                document.getElementById('res-desc-2').innerText = `• ÉPOCA IDEAL: Inicios de primavera o finales de invierno en almácigos resguardados.\n\n• PROCESO DE GERMINACIÓN: Disponer las semillas a una profundidad de dos veces su tamaño sobre tierra abonada. Humedecer la superficie diariamente con pulverizador (sin encharcar) manteniendo una temperatura de 18°C a 22°C.\n\n• TRASPLANTE: Pasar a contenedor o tierra definitiva cuando aparezcan las primeras 4 hojas verdaderas robustas.`;
+                document.getElementById('res-desc-3').innerText = `• SUELO / SUSTRATO: Mezcla porosa que evite la compactación (40% tierra orgánica, 30% humus de lombriz y 30% de perlita o arena de río).\n\n• MACETA Y BALCÓN: Usar recipientes con profundidad mínima de 25-30 cm para permitir raíces sanas. Tolera balcones bien iluminados si se los protege de vientos desecantes directos.\n\n• LUZ: Alta exposición lumínica (mínimo de 6 horas de sol directo diario).`;
 
-                // TRADUCTOR Y FILTRADO BOTÁNICO ESTRICTO DE IMÁGENES
-                inyectarImagenesMesa(query, 'planta');
+                inyectarFotosInteligentes(query, 'planta');
             } else {
                 resultCard.classList.add('huevo-theme');
-                document.getElementById('lbl-1').innerText = "Huevo / Embrion";
+                document.getElementById('lbl-1').innerText = "Huevo / Embrión";
                 document.getElementById('lbl-2').innerText = "Ejemplar Adulto";
                 document.getElementById('lbl-3').innerText = "Nido / Incubación";
                 document.getElementById('lbl-4').innerText = "Entorno Natural";
@@ -448,11 +459,11 @@
                 document.getElementById('title-item-2').innerText = "Manual Técnico de Incubación y Control Térmico:";
                 document.getElementById('title-item-3').innerText = "Condiciones del Nido, Humedad y Alimentación:";
 
-                document.getElementById('res-desc-1').innerText = textoCompleto ? cortarTexto(textoCompleto, 0, 650) : `Análisis biológico, morfológico y reproductivo detallado sobre la especie: ${query}.`;
-                document.getElementById('res-desc-2').innerText = `• CONDICIONES TÉRMICAS: Exige un entorno controlado mediante incubadora artificial o campana con lámpara infrarroja de calor estricta ajustada de 37.5°C a 37.8°C constantes.\n\n• VOLTEO OBLIGATORIO: Rotar los huevos de forma manual o mecánica de 3 a 5 veces al día (giros suaves de 180°) durante las primeras etapas críticas para impedir la adherencia interna del embrión.\n\n• ECLOSIÓN: Suspender drásticamente todo tipo de movimiento o volteo 3 días antes de la fecha estimada de nacimiento.`;
-                document.getElementById('res-desc-3').innerText = `• CONTROL DE HUMEDAD: Mantener rangos del 50%-55% relativo en fase de desarrollo, elevándose súbitamente al 65%-70% en los 3 días de cierre definitivo para reblandecer el cascarón.\n\n• VENTILACIÓN: Intercambio gaseoso limpio constante sin corrientes de aire frío directo.\n\n• OVOSCOPÍA: Inspección a contraluz en habitación oscura los días 7 y 14 para retirar ejemplares inviables.`;
+                document.getElementById('res-desc-1').innerText = textoCompleto ? cortarTexto(textoCompleto, 0, 650) : `Análisis zoológico y reproductivo detallado sobre la especie ovípara: ${query}.`;
+                document.getElementById('res-desc-2').innerText = `• CONDICIONES TÉRMICAS: Precisa de una incubadora o lámpara térmica regulada de manera milimétrica entre los 37.5°C y 37.8°C constantes.\n\n• VOLTEO OBLIGATORIO: Se deben rotar los huevos de forma manual o automática de 3 a 5 veces al día (giro suave de 180°) durante los primeros dos tercios del ciclo para evitar que el embrión muera adherido al cascarón.\n\n• ECLOSIÓN: Detener por completo los volteos 3 días antes de la fecha calculada de nacimiento para permitir la orientación de la cría.`;
+                document.getElementById('res-desc-3').innerText = `• HUMEDAD: Mantener entre el 50% y 55% de humedad relativa, aumentándola drásticamente al 65%-70% en la recta final de eclosión para ablandar las membranas del huevo.\n\n• VENTILACIÓN: El habitáculo requiere circulación constante de oxígeno limpio sin generar corrientes de aire heladas.\n\n• HIGIENE: Desinfectar semilleros o nidos artificiales antes del ciclo para prevenir infecciones bacterianas letales.`;
 
-                inyectarImagenesMesa(query, 'huevo');
+                inyectarFotosInteligentes(query, 'huevo');
             }
 
             loader.style.display = 'none';
@@ -461,32 +472,29 @@
 
         } catch (err) {
             loader.style.display = 'none';
-            errorBox.innerText = err.message || "Error al conectar con la base de datos.";
+            errorBox.innerText = err.message || "Error en los servidores.";
             errorBox.style.display = 'block';
         }
     }
 
-    // Nuevo motor de alimentación visual basado en términos científicos en inglés de Unsplash
-    function inyectarImagenesMesa(query, tipo) {
-        let q = query.toLowerCase().trim();
-        
-        // Mapeos de traducción manual rápida para blindar términos popularesconflictivos
-        if (q === 'menta' || q === 'mint') q = 'mint leaf';
-        if (q === 'limon' || q === 'limón' || q === 'lemon') q = 'lemon tree';
-        if (q === 'manzana' || q === 'apple') q = 'apple fruit';
+    // Sistema de inyección blindado con traducción obligatoria y bypass de caché
+    function inyectarFotosInteligentes(query, tipo) {
+        let qLimpia = query.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        let terminoIngles = DIC_BOTANICO[qLimpia] || qLimpia;
 
-        const ram = () => Math.floor(Math.random() * 100); // Forzar ruptura de caché de imagen repetida
+        // Marcador único de milisegundos para romper el congelamiento de caché en celulares
+        const cacheBuster = new Date().getTime(); 
 
         if (tipo === 'planta') {
-            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' seeds')}&sig=${ram()}`;
-            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' plant botany')}&sig=${ram()}`;
-            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' fresh harvest')}&sig=${ram()}`;
-            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' flower blossom')}&sig=${ram()}`;
+            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' seeds dry')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' sprout growth botany')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' fresh farm fruit harvest')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' blossom petal flower')}&timestamp=${cacheBuster}`;
         } else {
-            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' bird egg raw')}&sig=${ram()}`;
-            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' adult animal wildlife')}&sig=${ram()}`;
-            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' nest wild')}&sig=${ram()}`;
-            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(q + ' natural habitat wilderness')}&sig=${ram()}`;
+            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' unhatched raw egg nest')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' adult animal zoology')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' bird nest egg habitat')}&timestamp=${cacheBuster}`;
+            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoLingles + ' wildlife nature wilderness')}&timestamp=${cacheBuster}`;
         }
     }
 
