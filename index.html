@@ -11,8 +11,7 @@
             --text-main: #2c3e50;
             --primary: #27ae60;
             --primary-dark: #1e8449;
-            --accent-egg: #f39c12;
-            --accent-egg-dark: #d35400;
+            --accent-egg: #d35400;
             --border-radius: 12px;
             --shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
@@ -45,6 +44,11 @@
         header h1 {
             font-size: 1.8rem;
             color: var(--primary);
+            transition: color 0.3s ease;
+        }
+
+        header.huevo-theme h1 {
+            color: var(--accent-egg);
         }
 
         header p {
@@ -58,9 +62,14 @@
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+            border: 2px solid transparent;
         }
 
-        /* Selector de Categorías */
+        .search-box.huevo-mode {
+            border-color: var(--accent-egg);
+        }
+
         .type-selector {
             display: flex;
             gap: 10px;
@@ -69,7 +78,7 @@
 
         .type-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #e0e0e0;
             background: #fff;
             border-radius: 8px;
@@ -132,6 +141,7 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
 
         .search-box.huevo-mode button.main-search-btn {
@@ -170,6 +180,10 @@
             text-transform: capitalize;
             border-bottom: 2px solid #f0f0f0;
             padding-bottom: 8px;
+        }
+
+        .result-card.huevo-theme h2 {
+            color: var(--accent-egg);
         }
 
         .gallery-grid {
@@ -234,15 +248,15 @@
 <body>
 
 <div class="container">
-    <header>
+    <header id="main-header">
         <h1>🌱 SeedDex by Milo</h1>
-        <p>Buscador botánico y zoológico en tiempo real</p>
+        <p>Buscador de la naturaleza en tiempo real para móviles</p>
     </header>
 
     <div class="search-box" id="search-box-wrapper">
         <div class="type-selector">
             <button class="type-btn active" data-type="planta">🌱 Planta / Semilla</button>
-            <button class="type-btn" data-type="huevo">🥚 Huevo / Ave</button>
+            <button class="type-btn" data-type="huevo">🥚 Huevo / Animal</button>
         </div>
 
         <label id="input-label" for="search-input">¿De qué semilla o fruto querés saber?</label>
@@ -252,7 +266,7 @@
         </div>
     </div>
 
-    <div class="loader" id="loader">🔍 Buscando información en tiempo real...</div>
+    <div class="loader" id="loader">🔍 Buscando datos biológicos...</div>
     <div class="error-message" id="error-box"></div>
 
     <div class="result-card" id="result-card">
@@ -279,15 +293,15 @@
 
         <div class="info-section">
             <div class="info-item">
-                <strong id="title-item-1">Información General y Botánica:</strong>
+                <strong id="title-item-1">Información General:</strong>
                 <p id="res-desc-1">Cargando...</p>
             </div>
             <div class="info-item">
-                <strong id="title-item-2">Guía de Cultivo de la Planta:</strong>
+                <strong id="title-item-2">Proceso de Desarrollo / Cultivo:</strong>
                 <p id="res-desc-2">Cargando...</p>
             </div>
             <div class="info-item">
-                <strong id="title-item-3">Requerimientos Ambientales y Suelo:</strong>
+                <strong id="title-item-3">Requerimientos del Entorno:</strong>
                 <p id="res-desc-3">Cargando...</p>
             </div>
         </div>
@@ -303,10 +317,10 @@
     const typeButtons = document.querySelectorAll('.type-btn');
     const searchBoxWrapper = document.getElementById('search-box-wrapper');
     const inputLabel = document.getElementById('input-label');
+    const mainHeader = document.getElementById('main-header');
 
     let currentType = 'planta';
 
-    // Manejo del selector previo de categorías
     typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             typeButtons.forEach(b => b.classList.remove('active'));
@@ -315,14 +329,18 @@
 
             if (currentType === 'planta') {
                 searchBoxWrapper.classList.remove('huevo-mode');
+                mainHeader.classList.remove('huevo-theme');
+                mainHeader.querySelector('h1').innerText = '🌱 SeedDex by Milo';
                 inputLabel.innerText = '¿De qué semilla o fruto querés saber?';
                 searchInput.placeholder = 'Ej: Manzana, Tomate, Palta...';
                 loader.style.color = '#27ae60';
             } else {
                 searchBoxWrapper.classList.add('huevo-mode');
-                inputLabel.innerText = '¿De qué huevo o ave querés saber?';
-                searchInput.placeholder = 'Ej: Huevo de codorniz, Avestruz, Gallina...';
-                loader.style.color = '#f39c12';
+                mainHeader.classList.add('huevo-theme');
+                mainHeader.querySelector('h1').innerText = '🥚 SeedDex by Milo';
+                inputLabel.innerText = '¿De qué huevo o animal querés saber?';
+                searchInput.placeholder = 'Ej: Cocodrilo, Tortuga, Codorniz, Mariposa...';
+                loader.style.color = '#d35400';
             }
         });
     });
@@ -335,39 +353,37 @@
         errorBox.style.display = 'none';
         resultCard.style.display = 'none';
 
-        // Evitar homónimos inyectando palabras contextuales clave a la query de búsqueda
-        let searchQuery = query;
-        if (currentType === 'planta') {
-            searchQuery = `${query} (planta)`;
-        } else {
-            searchQuery = `${query} (ave)`;
-        }
-
         try {
-            // Fetch de Wikipedia estructurado tolerante
-            const wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(searchQuery)}&origin=*`;
+            // Intentar primero con el término limpio puro (Tolerancia máxima para ovíparos/reptiles/insectos)
+            let textoCompleto = "";
+            let tituloResultado = "";
+            
+            let wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(query)}&origin=*`;
             let wikiResp = await fetch(wikiUrl);
             let wikiData = await wikiResp.json();
             let pages = wikiData.query.pages;
             let pageId = Object.keys(pages)[0];
 
-            // Segunda oportunidad defensiva si falla con el sufijo (intenta búsqueda cruda)
+            // Si falla la primera, intentar desambiguación biológica controlada
             if (pageId === "-1") {
-                const fallbackUrl = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(query)}&origin=*`;
-                wikiResp = await fetch(fallbackUrl);
+                const queryAlternativa = currentType === 'planta' ? `${query} (planta)` : `${query} (animal)`;
+                wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=0&explaintext=1&titles=${encodeURIComponent(queryAlternativa)}&origin=*`;
+                wikiResp = await fetch(wikiUrl);
                 wikiData = await wikiResp.json();
                 pages = wikiData.query.pages;
                 pageId = Object.keys(pages)[0];
             }
 
             if (pageId === "-1") {
-                throw new Error(`No encontramos resultados precisos para "${query}" en esta categoría.`);
+                throw new Error(`No pudimos encontrar datos exactos de internet para "${query}". Intentá con un nombre común directo.`);
             }
 
-            const textoCompleto = pages[pageId].extract;
-            document.getElementById('res-nombre').innerText = pages[pageId].title;
+            textoCompleto = pages[pageId].extract;
+            tituloResultado = pages[pageId].title;
+            document.getElementById('res-nombre').innerText = tituloResultado;
 
-            // Configuración dinámica de campos según el selector
+            const queryClean = encodeURIComponent(query.toLowerCase());
+            
             if (currentType === 'planta') {
                 resultCard.classList.remove('huevo-theme');
                 document.getElementById('lbl-1').innerText = "Semilla";
@@ -376,35 +392,75 @@
                 document.getElementById('lbl-4').innerText = "Flor";
 
                 document.getElementById('title-item-1').innerText = "Información General y Botánica:";
-                document.getElementById('title-item-2').innerText = "Guía de Cultivo de la Planta:";
-                document.getElementById('title-item-3').innerText = "Requerimientos Ambientales y Suelo:";
+                document.getElementById('title-item-2').innerText = "Guía de Cultivo y Siembra:";
+                document.getElementById('title-item-3').innerText = "Requerimientos de Suelo y Luz:";
 
                 document.getElementById('res-desc-1').innerText = cortarTexto(textoCompleto, 0, 450);
-                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["cultivo", "siembra", "propagación", "crecimiento"], "Sembrar en sustrato orgánico suelto a profundidad moderada (el doble del tamaño de la semilla). Mantener la humedad constante sin encharcar.");
-                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["suelo", "clima", "temperatura", "luz"], "Requiere suelos con excelente drenaje, ricos en nutrientes y exposición directa al sol entre 4 y 6 horas diarias en climas templados.");
+                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["cultivo", "siembra", "propagación", "crecimiento"], "Sembrar la semilla a una profundidad equivalente al doble de su tamaño. Mantener el sustrato húmedo de manera uniforme sin generar encharcamientos.");
+                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["suelo", "clima", "temperatura", "luz"], "Precisa suelos aireados con buen drenaje, materia orgánica y una exposición solar directa de al menos 4 a 6 horas diarias.");
+
+                // Carga directa de imágenes optimizada
+                document.getElementById('img-1').src = `https://images.unsplash.com/featured/500x500/?${queryClean},seed`;
+                document.getElementById('img-2').src = `https://images.unsplash.com/featured/500x500/?${queryClean},plant`;
+                document.getElementById('img-3').src = `https://images.unsplash.com/featured/500x500/?${queryClean},fruit`;
+                document.getElementById('img-4').src = `https://images.unsplash.com/featured/500x500/?${queryClean},flower`;
             } else {
                 resultCard.classList.add('huevo-theme');
-                document.getElementById('lbl-1').innerText = "Huevo";
-                document.getElementById('lbl-2').innerText = "Ave Adulta";
-                document.getElementById('lbl-3').innerText = "Nido / Cría";
-                document.getElementById('lbl-4').innerText = "Hábitat";
+                document.getElementById('lbl-1').innerText = "Huevo / Cría";
+                document.getElementById('lbl-2').innerText = "Ejemplar Adulto";
+                document.getElementById('lbl-3').innerText = "Nido o Hábitat";
+                document.getElementById('lbl-4').innerText = "Entorno Natural";
 
                 document.getElementById('title-item-1').innerText = "Información de la Especie:";
-                document.getElementById('title-item-2').innerText = "Proceso de Incubación y Nido:";
-                document.getElementById('title-item-3').innerText = "Alimentación y Características:";
+                document.getElementById('title-item-2').innerText = "Reproducción e Incubación del Huevo:";
+                document.getElementById('title-item-3').innerText = "Alimentación y Ciclo de Vida:";
 
                 document.getElementById('res-desc-1').innerText = cortarTexto(textoCompleto, 0, 450);
-                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["incubación", "nido", "reproducción", "huevo"], "El periodo de incubación varía por especie. Requieren control estricto de temperatura constante y humedad controlada en el nido.");
-                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["alimentación", "hábitat", "comportamiento"], "Dieta basada en granos, insectos o nutrientes específicos de la especie. Requieren espacios protegidos de corrientes de aire frío.");
+                document.getElementById('res-desc-2').innerText = encontrarSeccionOClonar(textoCompleto, ["incubación", "huevo", "reproducción", "desove", "nido"], "El periodo de incubación varía según las condiciones ambientales térmicas. Los huevos requieren protección contra depredadores y temperaturas extremas.");
+                document.getElementById('res-desc-3').innerText = encontrarSeccionOClonar(textoCompleto, ["alimentación", "hábitat", "comportamiento", "vida"], "Desarrollan su ciclo vital en entornos específicos según la especie. Su dieta varía drásticamente desde insectos o plantas hasta alimentación carnívora.");
+
+                // Carga de imágenes adaptada a toda clase de animales ovíparos
+                document.getElementById('img-1').src = `https://images.unsplash.com/featured/500x500/?${queryClean},egg`;
+                document.getElementById('img-2').src = `https://images.unsplash.com/featured/500x500/?${queryClean},animal`;
+                document.getElementById('img-3').src = `https://images.unsplash.com/featured/500x500/?${queryClean},nest`;
+                document.getElementById('img-4').src = `https://images.unsplash.com/featured/500x500/?${queryClean},wildlife`;
             }
 
-            // Solución definitiva al fetch de fotos: Evitamos endpoints caídos mapeando las keywords en inglés directamente a Unsplash Source dinámico por redirección nativa HTTP
-            const queryClean = encodeURIComponent(query.toLowerCase());
-            if (currentType === 'planta') {
-                document.getElementById('img-1').src = `https://images.unsplash.com/photo-1600180758890-6b94e61025a5?w=500&q=80`; // Fallback semilla
-                document.getElementById('img-1').src = `https://images.unsplash.com/photo-1515150144380-bca9f1650ed9?w=500&q=80`; // Fallback brote
-                document.getElementById('img-3').src = `https://images.unsplash.com/photo-1610397648930-475583d71450?w=500&q=80`; // Fallback fruto
+            loader.style.display = 'none';
+            resultCard.style.display = 'block';
+            resultCard.scrollIntoView({ behavior: 'smooth' });
 
-                document.getElementById('img-1').src = `https://images.unsplash.com/featured/500x500/?${queryClean},seed,seeds`;
-                document.getElementById('img-2').src = `https://images.unsplash.com/featured/500x500/?${queryClean},plant`;
-                document.getElementById('img-3').src = `https://images.unsplash.com/featured/500x500/?${queryClean
+        } catch (err) {
+            loader.style.display = 'none';
+            errorBox.innerText = err.message || "Error al conectar con los servidores de búsqueda.";
+            errorBox.style.display = 'block';
+        }
+    }
+
+    function cortarTexto(texto, inicio, fin) {
+        if (!texto) return "Dato no disponible de forma inmediata en la enciclopedia.";
+        return texto.length > fin ? texto.substring(inicio, fin) + "..." : texto;
+    }
+
+    function encontrarSeccionOClonar(texto, palabrasClave, fragmentoFallback) {
+        if (!texto) return fragmentoFallback;
+        const lineas = texto.split('.');
+        let parrafoFiltrado = "";
+        for (let linea of lineas) {
+            for (let palabra of palabrasClave) {
+                if (linea.toLowerCase().includes(palabra) && linea.length > 25) {
+                    parrafoFiltrado += linea + ". ";
+                    if (parrafoFiltrado.length > 260) break;
+                }
+            }
+        }
+        return parrafoFiltrado.length > 40 ? parrafoFiltrado : fragmentoFallback;
+    }
+
+    searchBtn.addEventListener('click', buscarEnInternet);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') buscarEnInternet();
+    });
+</script>
+</body>
+</html>
