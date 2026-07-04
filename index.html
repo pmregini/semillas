@@ -282,10 +282,10 @@
         <h2 id="res-nombre">Resultado</h2>
         
         <div class="gallery-grid">
-            <div class="img-container"><img id="img-1" src="" alt="Cargando foto 1..."><div class="img-label" id="lbl-1">Semilla</div></div>
-            <div class="img-container"><img id="img-2" src="" alt="Cargando foto 2..."><div class="img-label" id="lbl-2">Planta</div></div>
-            <div class="img-container"><img id="img-3" src="" alt="Cargando foto 3..."><div class="img-label" id="lbl-3">Fruto</div></div>
-            <div class="img-container"><img id="img-4" src="" alt="Cargando foto 4..."><div class="img-label" id="lbl-4">Flor</div></div>
+            <div class="img-container"><img id="img-1" src="" alt="Cargando imagen botánica..."><div class="img-label" id="lbl-1">Semilla</div></div>
+            <div class="img-container"><img id="img-2" src="" alt="Cargando imagen de desarrollo..."><div class="img-label" id="lbl-2">Planta</div></div>
+            <div class="img-container"><img id="img-3" src="" alt="Cargando imagen de producción..."><div class="img-label" id="lbl-3">Fruto</div></div>
+            <div class="img-container"><img id="img-4" src="" alt="Cargando imagen de floración..."><div class="img-label" id="lbl-4">Flor</div></div>
         </div>
 
         <div class="info-section">
@@ -317,26 +317,6 @@
     const mainHeader = document.getElementById('main-header');
 
     let currentType = 'planta';
-
-    const DIC_BOTANICO = {
-        'gallina': 'chicken bird',
-        'pollo': 'chicken bird',
-        'codorniz': 'quail bird',
-        'pato': 'duck bird',
-        'ganso': 'goose bird',
-        'tortuga': 'turtle reptile',
-        'cocodrilo': 'crocodile reptile',
-        'menta': 'mint herb plant',
-        'limon': 'lemon fruit tree',
-        'limón': 'lemon fruit tree',
-        'manzana': 'apple fruit botanic',
-        'tomate': 'tomato plant ripe',
-        'girasol': 'sunflower bloom',
-        'palta': 'avocado tree plant',
-        'aguacate': 'avocado tree plant',
-        'frutilla': 'strawberry plant fruit',
-        'fresa': 'strawberry plant fruit'
-    };
 
     typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -418,6 +398,37 @@
         return null;
     }
 
+    // Extractor dinámico de imágenes nativas desde Wikimedia sin bloqueos de API
+    async function cargarImagenesSeguras(tituloArticulo, tipo) {
+        try {
+            const url = `https://es.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(tituloArticulo)}&prop=pageimages|images&pithumbsize=500&format=json&origin=*`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const pages = data.query.pages;
+            const pageId = Object.keys(pages)[0];
+            
+            let imgPrincipal = "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=500";
+            if (pageId !== "-1" && pages[pageId].thumbnail) {
+                imgPrincipal = pages[pageId].thumbnail.source;
+            }
+
+            // Setear imágenes con contingencia escalonada indestructible
+            if (tipo === 'planta') {
+                document.getElementById('img-1').src = "https://images.unsplash.com/photo-1600180758890-6b94e61025a5?w=500";
+                document.getElementById('img-2').src = imgPrincipal;
+                document.getElementById('img-3').src = imgPrincipal;
+                document.getElementById('img-4').src = "https://images.unsplash.com/photo-1625244724107-a73977fc6036?w=500";
+            } else {
+                document.getElementById('img-1').src = "https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=500";
+                document.getElementById('img-2').src = imgPrincipal;
+                document.getElementById('img-3').src = "https://images.unsplash.com/photo-1535083783855-76ae62b2914e?w=500";
+                document.getElementById('img-4').src = "https://images.unsplash.com/photo-1504618223053-559bdef9dd5a?w=500";
+            }
+        } catch (e) {
+            console.log("Error cargando imágenes.");
+        }
+    }
+
     async function buscarEnInternet() {
         const query = searchInput.value.trim();
         if (!query) return;
@@ -429,7 +440,8 @@
         try {
             const paginaValida = await resolverWikipediaCascada(query, currentType);
             let textoCompleto = paginaValida ? paginaValida.extract : "";
-            document.getElementById('res-nombre').innerText = paginaValida ? paginaValida.title : query;
+            let tituloFinal = paginaValida ? paginaValida.title : query;
+            document.getElementById('res-nombre').innerText = tituloFinal;
 
             if (currentType === 'planta') {
                 resultCard.classList.remove('huevo-theme');
@@ -446,7 +458,7 @@
                 document.getElementById('res-desc-2').innerText = `• ÉPOCA IDEAL: Inicios de primavera o finales de invierno en almácigos resguardados.\n\n• PROCESO DE GERMINACIÓN: Disponer las semillas a una profundidad de dos veces su tamaño sobre tierra abonada. Humedecer la superficie diariamente con pulverizador (sin encharcar) manteniendo una temperatura de 18°C a 22°C.\n\n• TRASPLANTE: Pasar a contenedor o tierra definitiva cuando aparezcan las primeras 4 hojas verdaderas robustas.`;
                 document.getElementById('res-desc-3').innerText = `• SUELO / SUSTRATO: Mezcla porosa que evite la compactación (40% tierra orgánica, 30% humus de lombriz y 30% de perlita o arena de río).\n\n• MACETA Y BALCÓN: Usar recipientes con profundidad mínima de 25-30 cm para permitir raíces sanas. Tolera balcones bien iluminados si se los protege de vientos desecantes directos.\n\n• LUZ: Alta exposición lumínica (mínimo de 6 horas de sol directo diario).`;
 
-                inyectarFotosInteligentes(query, 'planta');
+                await cargarImagenesSeguras(tituloFinal, 'planta');
             } else {
                 resultCard.classList.add('huevo-theme');
                 document.getElementById('lbl-1').innerText = "Huevo / Embrión";
@@ -462,7 +474,7 @@
                 document.getElementById('res-desc-2').innerText = `• CONDICIONES TÉRMICAS: Precisa de una incubadora o lámpara térmica regulada de manera milimétrica entre los 37.5°C y 37.8°C constantes.\n\n• VOLTEO OBLIGATORIO: Se deben rotar los huevos de forma manual o automática de 3 a 5 veces al día (giro suave de 180°) durante los primeros dos tercios del ciclo para evitar que el embrión muera adherido al cascarón.\n\n• ECLOSIÓN: Detener por completo los volteos 3 días antes de la fecha calculada de nacimiento para permitir la orientación de la cría.`;
                 document.getElementById('res-desc-3').innerText = `• HUMEDAD: Mantener entre el 50% y 55% de humedad relativa, aumentándola drásticamente al 65%-70% en la recta final de eclosión para ablandar las membranas del huevo.\n\n• VENTILACIÓN: El habitáculo requiere circulación constante de oxígeno limpio sin generar corrientes de aire heladas.\n\n• HIGIENE: Desinfectar semilleros o nidos artificiales antes del ciclo para prevenir infecciones bacterianas letales.`;
 
-                inyectarFotosInteligentes(query, 'huevo');
+                await cargarImagenesSeguras(tituloFinal, 'huevo');
             }
 
             loader.style.display = 'none';
@@ -473,24 +485,6 @@
             loader.style.display = 'none';
             errorBox.innerText = err.message || "Error en los servidores.";
             errorBox.style.display = 'block';
-        }
-    }
-
-    function inyectarFotosInteligentes(query, tipo) {
-        let qLimpia = query.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        let terminoIngles = DIC_BOTANICO[qLimpia] || qLimpia;
-        const cacheBuster = new Date().getTime(); 
-
-        if (tipo === 'planta') {
-            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' seeds dry')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' sprout growth botany')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' fresh farm fruit harvest')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' blossom petal flower')}&timestamp=${cacheBuster}`;
-        } else {
-            document.getElementById('img-1').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' unhatched raw egg nest')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-2').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' adult animal zoology')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-3').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' bird nest egg habitat')}&timestamp=${cacheBuster}`;
-            document.getElementById('img-4').src = `https://images.unsplash.com/featured/?${encodeURIComponent(terminoIngles + ' wildlife nature wilderness')}&timestamp=${cacheBuster}`;
         }
     }
 
