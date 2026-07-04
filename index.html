@@ -34,6 +34,7 @@
         .container {
             max-width: 600px;
             margin: 0 auto;
+            position: relative;
         }
 
         header {
@@ -174,6 +175,7 @@
             box-shadow: var(--shadow);
             padding: 20px;
             display: none;
+            position: relative;
         }
 
         .result-card h2 {
@@ -183,10 +185,45 @@
             text-transform: capitalize;
             border-bottom: 2px solid #f0f0f0;
             padding-bottom: 8px;
+            padding-right: 50px; /* Espacio para el botón de audio */
         }
 
         .result-card.huevo-theme h2 {
             color: var(--accent-egg);
+        }
+
+        /* Botón de Voz para Niños */
+        .audio-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .result-card.huevo-theme .audio-btn {
+            background: var(--accent-egg);
+        }
+
+        .audio-btn.speaking {
+            animation: pulse 1s infinite alternate;
+            background: #2c3e50 !important;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+            to { transform: scale(1.1); box-shadow: 0 4px 14px rgba(44, 62, 80, 0.4); }
         }
 
         .gallery-grid {
@@ -279,13 +316,15 @@
     <div class="error-message" id="error-box"></div>
 
     <div class="result-card" id="result-card">
+        <button class="audio-btn" id="audio-btn" title="Escuchar contenido">🔊</button>
+
         <h2 id="res-nombre">Resultado</h2>
         
         <div class="gallery-grid">
-            <div class="img-container"><img id="img-1" src="" alt="Cargando imagen botánica..."><div class="img-label" id="lbl-1">Semilla</div></div>
-            <div class="img-container"><img id="img-2" src="" alt="Cargando imagen de desarrollo..."><div class="img-label" id="lbl-2">Planta</div></div>
-            <div class="img-container"><img id="img-3" src="" alt="Cargando imagen de producción..."><div class="img-label" id="lbl-3">Fruto</div></div>
-            <div class="img-container"><img id="img-4" src="" alt="Cargando imagen de floración..."><div class="img-label" id="lbl-4">Flor</div></div>
+            <div class="img-container"><img id="img-1" src="" alt="Cargando foto 1..."><div class="img-label" id="lbl-1">Semilla</div></div>
+            <div class="img-container"><img id="img-2" src="" alt="Cargando foto 2..."><div class="img-label" id="lbl-2">Planta</div></div>
+            <div class="img-container"><img id="img-3" src="" alt="Cargando foto 3..."><div class="img-label" id="lbl-3">Fruto</div></div>
+            <div class="img-container"><img id="img-4" src="" alt="Cargando foto 4..."><div class="img-label" id="lbl-4">Flor</div></div>
         </div>
 
         <div class="info-section">
@@ -315,11 +354,16 @@
     const searchBoxWrapper = document.getElementById('search-box-wrapper');
     const inputLabel = document.getElementById('input-label');
     const mainHeader = document.getElementById('main-header');
+    const audioBtn = document.getElementById('audio-btn');
 
     let currentType = 'planta';
+    letisSpeaking = false;
+    let synth = window.speechSynthesis;
+    let currentUtterance = null;
 
     typeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
+            detenerAudio();
             typeButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentType = btn.getAttribute('data-type');
@@ -398,7 +442,6 @@
         return null;
     }
 
-    // Extractor dinámico de imágenes nativas desde Wikimedia sin bloqueos de API
     async function cargarImagenesSeguras(tituloArticulo, tipo) {
         try {
             const url = `https://es.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(tituloArticulo)}&prop=pageimages|images&pithumbsize=500&format=json&origin=*`;
@@ -412,7 +455,6 @@
                 imgPrincipal = pages[pageId].thumbnail.source;
             }
 
-            // Setear imágenes con contingencia escalonada indestructible
             if (tipo === 'planta') {
                 document.getElementById('img-1').src = "https://images.unsplash.com/photo-1600180758890-6b94e61025a5?w=500";
                 document.getElementById('img-2').src = imgPrincipal;
@@ -424,12 +466,11 @@
                 document.getElementById('img-3').src = "https://images.unsplash.com/photo-1535083783855-76ae62b2914e?w=500";
                 document.getElementById('img-4').src = "https://images.unsplash.com/photo-1504618223053-559bdef9dd5a?w=500";
             }
-        } catch (e) {
-            console.log("Error cargando imágenes.");
-        }
+        } catch (e) {}
     }
 
     async function buscarEnInternet() {
+        detenerAudio();
         const query = searchInput.value.trim();
         if (!query) return;
 
@@ -488,6 +529,55 @@
         }
     }
 
+    // Funcionalidad de Audio (Lectura de Pantalla Interactiva para Niños)
+    function hablarContenido() {
+        if (isSpeaking) {
+            detenerAudio();
+            return;
+        }
+
+        const nombre = document.getElementById('res-nombre').innerText;
+        const desc1 = document.getElementById('res-desc-1').innerText;
+        const desc2 = document.getElementById('res-desc-2').innerText;
+        const desc3 = document.getElementById('res-desc-3').innerText;
+
+        // Limpiar símbolos raros del texto para una lectura fluida
+        const textoParaLeer = `Información sobre: ${nombre}. ${desc1} ${desc2.replace(/•/g, "")} ${desc3.replace(/•/g, "")}`;
+
+        currentUtterance = new SpeechSynthesisUtterance(textoParaLeer);
+        currentUtterance.lang = 'es-ES'; // Forzar idioma español
+        currentUtterance.rate = 0.95;    // Un toque más lento para niños
+
+        currentUtterance.onstart = () => {
+            isSpeaking = true;
+            audioBtn.classList.add('speaking');
+            audioBtn.innerText = '🛑';
+        };
+
+        currentUtterance.onend = () => {
+            resetAudioUI();
+        };
+
+        currentUtterance.onerror = () => {
+            resetAudioUI();
+        };
+
+        synth.speak(currentUtterance);
+    }
+
+    function detenerAudio() {
+        if (synth) {
+            synth.cancel();
+        }
+        resetAudioUI();
+    }
+
+    function resetAudioUI() {
+        isSpeaking = false;
+        audioBtn.classList.remove('speaking');
+        audioBtn.innerText = '🔊';
+    }
+
     function cortarTexto(texto, inicio, fin) {
         if (!texto) return "";
         return texto.length > fin ? texto.substring(inicio, fin) + "..." : texto;
@@ -497,6 +587,7 @@
     searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') buscarEnInternet();
     });
+    audioBtn.addEventListener('click', hablarContenido);
 </script>
 </body>
 </html>
