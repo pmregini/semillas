@@ -250,7 +250,7 @@
             font-size: 0.95rem;
             text-align: justify;
             color: #444;
-            white-space: pre-line; /* Mantiene saltos de línea estéticos */
+            white-space: pre-line;
         }
     </style>
 </head>
@@ -381,13 +381,16 @@
                 document.getElementById('title-item-3').innerText = "Requerimientos de Sustrato, Maceta y Luz:";
 
                 document.getElementById('res-desc-1').innerText = textoCompleto ? cortarTexto(textoCompleto, 0, 600) : `Información enciclopédica general sobre el cultivo de ${query}.`;
-                
-                // Manual de cultivo robusto estructurado en párrafos claros
                 document.getElementById('res-desc-2').innerText = `• ÉPOCA IDEAL: Inicios de primavera o finales de invierno en interiores (evitando heladas por completo).\n\n• PROCESO DE GERMINACIÓN: Colocar las semillas en semilleros a una profundidad equivalente a 2 veces su diámetro. Mantener el sustrato húmedo de manera constante pero sin encharcar (idealmente con pulverizador) a una temperatura ambiente de entre 18°C y 24°C.\n\n• TRASPLANTE: Mudar a lugar definitivo cuando el brote presente de 4 a 6 hojas verdaderas bien firmes.`;
-                
                 document.getElementById('res-desc-3').innerText = `• SUELO / SUSTRATO: Requiere una mezcla porosa rica en nutrientes (50% tierra fértil, 30% compost o humus de lombriz, y 20% perlita para drenaje óptimo).\n\n• MACETA Y BALCÓN: Si se cultiva en contenedores, usar macetas profundas (mínimo de 30 cm de profundidad o 15-20 litros de capacidad) con perforaciones de drenaje despejadas. Apto para balcones siempre que reciba protección contra ráfagas de viento secas.\n\n• LUZ: Exposición lumínica alta de sol directo (mínimo de 6 horas diarias).`;
 
-                setImages(queryClean, ['seed', 'plant', 'fruit', 'flower']);
+                // FILTRADO RESTRICTIVO ANTI-HOMÓNIMOS (Evita niños en fotos botánicas)
+                setImages(queryClean, [
+                    'raw seed botany macro', 
+                    'young plant botany green branch', 
+                    'fresh fruit hanging on tree close up', 
+                    'blossom flower botany branch petal'
+                ]);
             } else {
                 resultCard.classList.add('huevo-theme');
                 document.getElementById('lbl-1').innerText = "Huevo / Embrion";
@@ -400,13 +403,16 @@
                 document.getElementById('title-item-3').innerText = "Condiciones del Nido, Humedad y Alimentación:";
 
                 document.getElementById('res-desc-1').innerText = textoCompleto ? cortarTexto(textoCompleto, 0, 600) : `Análisis biológico y reproductivo detallado sobre: ${query}.`;
-                
-                // Manual técnico de incubación hiper detallado solicitado para huevos
                 document.getElementById('res-desc-2').innerText = `• CONDICIONES TÉRMICAS: Requiere el uso de una incubadora o una lámpara de calor infrarroja regulada de manera estricta a una temperatura constante de entre 37.5°C y 37.8°C (evitar picos térmicos que dañen al embrión).\n\n• VOLTEO OBLIGATORIO: Los huevos deben rotarse de forma suave entre 3 y 5 veces al día (un giro de 180°) durante los primeros 18 días de incubación para evitar que el embrión se adhiera firmemente a las paredes internas del cascarón.\n\n• ETAPA DE ECLOSIÓN: Suspender por completo los movimientos y volteos 3 días antes del nacimiento estimado (Día 18 en gallinas).`;
-                
                 document.getElementById('res-desc-3').innerText = `• CONTROL DE HUMEDAD: Mantener un rango de humedad relativa estricto del 50% al 55% durante el desarrollo, elevándolo de golpe al 65%-70% en los últimos tres días para ablandar el cascarón y facilitar la rotura por parte de la cría.\n\n• VENTILACIÓN: El entorno requiere flujo de aire limpio oxigenado constante pero libre de corrientes directas heladas.\n\n• ILUMINACIÓN Y CUIDADO EXTRA: Implementar ovoscopía (revisión a contraluz con linterna potente) al día 7 y 14 para descartar huevos no fértiles.`;
 
-                setImages(queryClean, ['egg', 'animal', 'nest', 'wildlife']);
+                // FILTRADO RESTRICTIVO ANTI-COMIDA (Evita platos de comida y huevos fritos)
+                setImages(queryClean, [
+                    'nest egg biology unhatched raw -food -cooking', 
+                    'adult animal wildlife nature -food', 
+                    'wild nest incubation environment', 
+                    'natural habitat wilderness landscape'
+                ]);
             }
 
             loader.style.display = 'none';
@@ -423,8 +429,8 @@
     function setImages(query, keywords) {
         for(let i=0; i<4; i++) {
             const imgElement = document.getElementById(`img-${i+1}`);
-            // Motores estables combinados redundantes para evitar rotura de imágenes en cache móvil
-            imgElement.src = `https://loremflickr.com/500/500/${encodeURIComponent(query)},${keywords[i]}/all`;
+            // Inyección de parámetros negativos directos para el motor de renders estables
+            imgElement.src = `https://loremflickr.com/500/500/${encodeURIComponent(query)},${encodeURIComponent(keywords[i])}/all`;
         }
     }
 
